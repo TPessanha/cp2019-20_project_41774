@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-g -std=gnu11 -Wall -Werror #-fopenmp
-LDFLAGS=#-fopenmp
+CFLAGS=-g -std=gnu11 -Wall -Werror -fopenmp
+LDFLAGS=-fopenmp
 
 DIR=src
 S=$(shell find $(DIR) -name '*.c' -print)

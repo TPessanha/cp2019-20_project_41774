@@ -2,115 +2,147 @@
 #include <assert.h>
 #include "patterns.h"
 
-void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
-    /* To be implemented */
-    assert (dest != NULL);
-    assert (src != NULL);
-    assert (worker != NULL);
+void map(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2))
+{
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(worker != NULL);
     char *d = dest;
     char *s = src;
-    for (int i = 0;  i < nJob;  i++) {
-        worker (&d[i * sizeJob], &s[i * sizeJob]);
+#pragma omp parallel for
+    for (int i = 0; i < nJob; i++)
+    {
+        worker(&d[i * sizeJob], &s[i * sizeJob]);
     }
 }
 
-void reduce (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
+//CODIGO DO PROFESSOR NAO ALTERADO
+void map_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2))
+{
     /* To be implemented */
-    assert (dest != NULL);
-    assert (src != NULL);
-    assert (worker != NULL);
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(worker != NULL);
     char *d = dest;
     char *s = src;
-    if (nJob > 0) {
-        memcpy (&d[0], &s[0], sizeJob);
-        for (int i = 1;  i < nJob;  i++)
-            worker (&d[0], &d[0], &s[i * sizeJob]);
+    for (int i = 0; i < nJob; i++)
+    {
+        worker(&d[i * sizeJob], &s[i * sizeJob]);
     }
 }
 
-void scan (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
+void reduce(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3))
+{
     /* To be implemented */
-    assert (dest != NULL);
-    assert (src != NULL);
-    assert (worker != NULL);
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(worker != NULL);
     char *d = dest;
     char *s = src;
-    if (nJob > 1) {
-        memcpy (&d[0], &s[0], sizeJob);
-        for (int i = 1;  i < nJob;  i++)
-            worker (&d[i * sizeJob], &d[(i-1) * sizeJob], &s[i * sizeJob]);
+    if (nJob > 0)
+    {
+        memcpy(&d[0], &s[0], sizeJob);
+        for (int i = 1; i < nJob; i++)
+            worker(&d[0], &d[0], &s[i * sizeJob]);
     }
 }
 
-int pack (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
+void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3))
+{
     /* To be implemented */
-    assert (dest != NULL);
-    assert (src != NULL);
-    assert (filter != NULL);
-    assert (nJob >= 0);
-    assert (sizeJob > 0);
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(worker != NULL);
+    char *d = dest;
+    char *s = src;
+    if (nJob > 1)
+    {
+        memcpy(&d[0], &s[0], sizeJob);
+        for (int i = 1; i < nJob; i++)
+            worker(&d[i * sizeJob], &d[(i - 1) * sizeJob], &s[i * sizeJob]);
+    }
+}
+
+int pack(void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter)
+{
+    /* To be implemented */
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(filter != NULL);
+    assert(nJob >= 0);
+    assert(sizeJob > 0);
     char *d = dest;
     char *s = src;
     int pos = 0;
-    for (int i=0; i < nJob; i++) {
-        if (filter[i]) {
-            memcpy (&d[pos * sizeJob], &s[i * sizeJob], sizeJob);
+    for (int i = 0; i < nJob; i++)
+    {
+        if (filter[i])
+        {
+            memcpy(&d[pos * sizeJob], &s[i * sizeJob], sizeJob);
             pos++;
         }
     }
     return pos;
 }
 
-void gather (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter, int nFilter) {
+void gather(void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter, int nFilter)
+{
     /* To be implemented */
-    assert (dest != NULL);
-    assert (src != NULL);
-    assert (filter != NULL);
-    assert (nJob >= 0);
-    assert (sizeJob > 0);
-    assert (nFilter >= 0);
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(filter != NULL);
+    assert(nJob >= 0);
+    assert(sizeJob > 0);
+    assert(nFilter >= 0);
     char *d = dest;
     char *s = src;
-    for (int i=0; i < nFilter; i++) {
-        assert (filter[i] < nJob);
-        memcpy (&d[i * sizeJob], &s[filter[i] * sizeJob], sizeJob);
+    for (int i = 0; i < nFilter; i++)
+    {
+        assert(filter[i] < nJob);
+        memcpy(&d[i * sizeJob], &s[filter[i] * sizeJob], sizeJob);
     }
 }
 
-void scatter (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
+void scatter(void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter)
+{
     /* To be implemented */
-    assert (dest != NULL);
-    assert (src != NULL);
-    assert (filter != NULL);
-    assert (nJob >= 0);
-    assert (sizeJob > 0);
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(filter != NULL);
+    assert(nJob >= 0);
+    assert(sizeJob > 0);
     char *d = dest;
     char *s = src;
-    for (int i=0; i < nJob; i++) {
-        assert (filter[i] < nJob);
-        memcpy (&d[filter[i] * sizeJob], &s[i * sizeJob], sizeJob);
+    for (int i = 0; i < nJob; i++)
+    {
+        assert(filter[i] < nJob);
+        memcpy(&d[filter[i] * sizeJob], &s[i * sizeJob], sizeJob);
     }
 }
 
-void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
+void pipeline(void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers)
+{
     /* To be implemented */
-    assert (dest != NULL);
-    assert (src != NULL);
-    assert (workerList != NULL);
-    assert (nJob >= 0);
-    assert (sizeJob > 0);
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(workerList != NULL);
+    assert(nJob >= 0);
+    assert(sizeJob > 0);
     char *d = dest;
     char *s = src;
-    for (int i=0; i < nJob; i++) {
-        memcpy (&d[i * sizeJob], &s[i * sizeJob], sizeJob);
-        for (int j = 0;  j < nWorkers;  j++) {
-            assert (workerList[j] != NULL);
-            workerList[j] (&d[i * sizeJob], &d[i * sizeJob]);
+    for (int i = 0; i < nJob; i++)
+    {
+        memcpy(&d[i * sizeJob], &s[i * sizeJob], sizeJob);
+        for (int j = 0; j < nWorkers; j++)
+        {
+            assert(workerList[j] != NULL);
+            workerList[j](&d[i * sizeJob], &d[i * sizeJob]);
         }
     }
 }
 
-void farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers) {
+void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
+{
     /* To be implemented */
-    map (dest, src, nJob, sizeJob, worker);  // it provides the right result, but is a very very vey bad implementation…
+    map(dest, src, nJob, sizeJob, worker); // it provides the right result, but is a very very vey bad implementation…
 }
