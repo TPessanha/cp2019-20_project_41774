@@ -9,6 +9,7 @@ void map(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void
     assert(worker != NULL);
     char *d = dest;
     char *s = src;
+
 #pragma omp parallel for
     for (int i = 0; i < nJob; i++)
     {
