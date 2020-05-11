@@ -1,6 +1,10 @@
 #include <string.h>
 #include <assert.h>
 #include "patterns.h"
+#include <stdio.h>
+#include <omp.h>
+#include <stdlib.h>
+#include "debug.h"
 
 void map(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2))
 {
@@ -33,6 +37,55 @@ void map_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(
 }
 
 void reduce(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3))
+{
+    /* To be implemented */
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(worker != NULL);
+    char *d = dest;
+    char *s = src;
+    char *values;
+    int size;
+
+    if (nJob > 0)
+    {
+        if (omp_get_max_threads() > nJob)
+            omp_set_num_threads(nJob);
+#pragma omp parallel shared(values, size)
+        {
+#pragma omp single
+            //Make an array for final thread value
+            {
+                size = sizeJob * omp_get_num_threads();
+                values = malloc(size);
+            }
+            TYPE tmp;
+            //grab initial value from source
+            int tid = omp_get_thread_num();
+            memcpy(&tmp, &s[tid * sizeJob], sizeJob);
+
+#pragma omp for
+            //Do Thread work and add its value to the final array
+            for (int i = omp_get_num_threads(); i < nJob; i++)
+            {
+                worker(&tmp, &tmp, &s[i * sizeJob]);
+            }
+            memcpy(&values[tid * sizeJob], &tmp, sizeJob);
+        }
+        //do final reduction after all theads finished
+        for (int i = 1; i < size / sizeof(TYPE); i++)
+        {
+            worker(&values[0], &values[0], &values[i * sizeJob]);
+        }
+        //Set final value
+        memcpy(&d[0], &values[0], sizeJob);
+
+        //free
+        free(values);
+    }
+}
+
+void reduce_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3))
 {
     /* To be implemented */
     assert(dest != NULL);

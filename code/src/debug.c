@@ -8,6 +8,8 @@ void printDouble(const double *src, size_t n, const char *msg)
 {
     if (debug)
     {
+        if (n > 20)
+            n = 20;
         printf("%s %s: ", msg, "double");
         for (int i = 0; i < n; i++)
             printf("[%d]=%lf ", i, src[i]);
@@ -19,6 +21,8 @@ void printInt(const int *src, size_t n, const char *msg)
 {
     if (debug)
     {
+        if (n > 20)
+            n = 20;
         printf("%s int: ", msg);
         for (int i = 0; i < n; i++)
             printf("[%d]=%d ", i, src[i]);
@@ -30,6 +34,8 @@ void printFloat(const float *src, size_t n, const char *msg)
 {
     if (debug)
     {
+        if (n > 20)
+            n = 20;
         printf("%s %s: ", msg, "double");
         for (int i = 0; i < n; i++)
             printf("[%d]=%f ", i, src[i]);
