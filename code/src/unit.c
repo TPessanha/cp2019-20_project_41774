@@ -52,12 +52,11 @@ static void workerSubtract(void* a, const void* b, const void* c) {
 }
 */
 
-/*
-static void workerMultiply(void* a, const void* b, const void* c) {
+static void workerMultiply(void *a, const void *b, const void *c)
+{
     // a = b * c
-    *(TYPE *)a = *(TYPE *)b + *(TYPE *)c;
+    *(TYPE *)a = *(TYPE *)b * *(TYPE *)c;
 }
-*/
 
 static void workerAddOne(void *a, const void *b)
 {
@@ -109,6 +108,30 @@ void testReduce(void *src, size_t n, size_t size)
 {
     TYPE *dest = malloc(size);
     reduce(dest, src, n, size, workerAdd);
+    printDouble(dest, 1, __FUNCTION__);
+    free(dest);
+}
+
+void testReduce_seq(void *src, size_t n, size_t size)
+{
+    TYPE *dest = malloc(size);
+    reduce_seq(dest, src, n, size, workerAdd);
+    printDouble(dest, 1, __FUNCTION__);
+    free(dest);
+}
+
+void testReduceMult_seq(void *src, size_t n, size_t size)
+{
+    TYPE *dest = malloc(size);
+    reduce_seq(dest, src, n, size, workerMultiply);
+    printDouble(dest, 1, __FUNCTION__);
+    free(dest);
+}
+
+void testReduceMult(void *src, size_t n, size_t size)
+{
+    TYPE *dest = malloc(size);
+    reduce(dest, src, n, size, workerMultiply);
     printDouble(dest, 1, __FUNCTION__);
     free(dest);
 }
@@ -195,6 +218,9 @@ TESTFUNCTION testFunction[] = {
     testMap_seq,
     testMap2,
     testReduce,
+    testReduce_seq,
+    testReduceMult,
+    testReduceMult_seq,
     testScan,
     testPack,
     testGather,
@@ -208,6 +234,9 @@ char *testNames[] = {
     "testMap_seq",
     "testMap2",
     "testReduce",
+    "testReduce_seq",
+    "testReduceMult",
+    "testReduceMult_seq",
     "testScan",
     "testPack",
     "testGather",
