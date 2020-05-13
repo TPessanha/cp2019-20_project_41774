@@ -74,6 +74,15 @@ void gather(
     int nFilter        // # elements in the filter
 );
 
+void gather_seq(
+    void *dest,        // Target array
+    void *src,         // Source array
+    size_t nJob,       // # elements in the source array
+    size_t sizeJob,    // Size of each element in the source array
+    const int *filter, // Filter for gather
+    int nFilter        // # elements in the filter
+);
+
 void scatter(
     void *dest,       // Target array
     void *src,        // Source array

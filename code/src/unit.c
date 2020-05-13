@@ -200,6 +200,19 @@ void testGather(void *src, size_t n, size_t size)
     free(dest);
 }
 
+void testGather_seq(void *src, size_t n, size_t size)
+{
+    int nFilter = 3;
+    TYPE *dest = malloc(nFilter * size);
+    int filter[nFilter];
+    for (int i = 0; i < nFilter; i++)
+        filter[i] = rand() % n;
+    printInt(filter, nFilter, "filter");
+    gather_seq(dest, src, n, size, filter, nFilter);
+    printDouble(dest, nFilter, __FUNCTION__);
+    free(dest);
+}
+
 void testScatter(void *src, size_t n, size_t size)
 {
     int nDest = 6;
@@ -255,6 +268,7 @@ TESTFUNCTION testFunction[] = {
     testPack,
     testPack_seq,
     testGather,
+    testGather_seq,
     testScatter,
     testPipeline,
     testFarm,
@@ -273,6 +287,7 @@ char *testNames[] = {
     "testPack",
     "testPack_seq",
     "testGather",
+    "testGather_seq",
     "testScatter",
     "testPipeline",
     "testFarm",
