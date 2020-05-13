@@ -220,16 +220,18 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 
         // Down Pass ************************************************************
         treeFromLeft = malloc(treeSize * sizeJob);
-        treeFromLeft[0] = 0;
-        lvl = 0;
-        lowRange = 0;
-        highRange = 0;
+        // treeFromLeft[0] = 20;
+        lvl = 1;
+        lowRange = 2;
+        highRange = 2;
+        memcpy(&treeFromLeft[2], &treeSum[1], sizeJob);
         while (lvl < levels)
         {
             // printf("lvl: %d\nFrom %d to %d\n", lvl, lowRange, highRange);
             sumRange(treeSum, treeFromLeft, lowRange, highRange, worker);
             lvl++;
-            lowRange = getFirstRowIdx(lvl);
+            lowRange = getFirstRowIdx(lvl) + 1;
+            memcpy(&treeFromLeft[lowRange], &treeSum[lowRange - 1], sizeJob);
             if (lvl < levels - 1)
                 highRange = getFirstRowIdx(lvl + 1) - 1;
             else
@@ -258,6 +260,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
                 worker(&d[(i + lastRow) * sizeJob], &treeFromLeft[idx + i], &treeSum[idx + i]);
             }
         }
+        memcpy(&d[0], &treeSum[idx], sizeJob);
         //free
         free(treeSum);
         free(treeFromLeft);
