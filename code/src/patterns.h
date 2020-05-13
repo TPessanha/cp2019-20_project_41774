@@ -1,17 +1,6 @@
 #ifndef __PATTERNS_H
 #define __PATTERNS_H
 
-#if defined(INT)
-#define TYPE int
-#define FMT "%d"
-#elif defined(FLOAT)
-#define TYPE float
-#define FMT "%f"
-#else
-#define TYPE double
-#define FMT "%lf"
-#endif
-
 void map(
     void *dest,                              // Target array
     void *src,                               // Source array
@@ -45,6 +34,14 @@ void reduce_seq(
 );
 
 void scan(
+    void *dest,                                              // Target array
+    void *src,                                               // Source array
+    size_t nJob,                                             // # elements in the source array
+    size_t sizeJob,                                          // Size of each element in the source array
+    void (*worker)(void *v1, const void *v2, const void *v3) // [ v1 = op (v2, v3) ]
+);
+
+void scan_seq(
     void *dest,                                              // Target array
     void *src,                                               // Source array
     size_t nJob,                                             // # elements in the source array

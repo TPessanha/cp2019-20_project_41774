@@ -5,6 +5,18 @@
 #include <omp.h>
 #include <stdlib.h>
 #include "debug.h"
+#include <math.h>
+
+#if defined(INT)
+#define TYPE int
+#define FMT "%d"
+#elif defined(FLOAT)
+#define TYPE float
+#define FMT "%f"
+#else
+#define TYPE double
+#define FMT "%lf"
+#endif
 
 void map(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2))
 {
@@ -101,7 +113,158 @@ void reduce_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worke
     }
 }
 
+int calcTreeHeight(int nJob)
+{
+    assert(nJob >= 1);
+    nJob = nJob * 2 - 1;
+    int size = 1;
+    while (size < nJob)
+    {
+        size *= 2;
+    }
+    size--;
+    return size;
+}
+
+void buildRange(TYPE *treeSum, int lo, int hi, void (*worker)(void *dst, const void *v1, const void *v2))
+{
+#pragma omp parallel for
+    for (size_t i = lo; i < hi; i += 2)
+    {
+        // printf("Lo: %ld\nHI: %d\n", i, hi);
+        worker(&treeSum[i / 2], &treeSum[i], &treeSum[i + 1]);
+    }
+    // }
+}
+
+void sumRange(TYPE *treeSum, TYPE *treeLeft, int lo, int hi, void (*worker)(void *dst, const void *v1, const void *v2))
+{
+#pragma omp parallel for
+    for (size_t i = lo; i <= hi; i++)
+    {
+        int leftChild = i * 2 + 1;
+        // printf("Lo: %ld\nHI: %d\n", i, hi);
+        // printf("LChild: %d\n", leftChild);
+        memcpy(&treeLeft[leftChild], &treeLeft[i], sizeof(TYPE));
+        worker(&treeLeft[leftChild + 1], &treeLeft[i], &treeSum[leftChild]);
+    }
+    // }
+}
+
+int getFirstRowIdx(int level)
+{
+    return ((int)pow(2, level)) - 1;
+}
+
+int getHeight(int nNodes)
+{
+    return ((int)log2(nNodes));
+}
+
 void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3))
+{
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(worker != NULL);
+    char *d = dest;
+    // char *s = src;
+    TYPE *sd = src;
+    TYPE *treeSum;
+    TYPE *treeFromLeft;
+    if (nJob > 1)
+    {
+        int treeSize = nJob * 2 - 1;
+        treeSum = malloc(treeSize * sizeJob);
+        int levels = getHeight(treeSize);
+        // printf("Njob:%ld\ntreeSize:%d\nlevels:%d\n", nJob, treeSize, levels);
+
+        //Builds leafs*****************************************************
+        int idx = getFirstRowIdx(levels);
+        int lastRow = treeSize - idx;
+#pragma omp parallel firstprivate(idx)
+        {
+#pragma omp for
+            for (size_t i = 0; i < lastRow; i++)
+            {
+                memcpy(&treeSum[idx + i], &sd[i], sizeJob);
+            }
+
+            // memcpy(&treeSum[idx], &sd[0], lastRow * sizeJob);
+            int remaining = (nJob - lastRow);
+            // printf("remaining:%d\n", remaining);
+            idx = idx - remaining;
+#pragma omp for
+            for (size_t i = 0; i < remaining; i++)
+            {
+                memcpy(&treeSum[idx + i], &sd[lastRow + i], sizeJob);
+            }
+        }
+        // memcpy(&treeSum[idx - remaining], &sd[lastRow], remaining * sizeJob);
+
+        // printDouble(treeSum, treeSize, "Leafs");
+
+        // Build tree UP pass************************************************
+        int lvl = levels;
+        int lowRange = getFirstRowIdx(lvl);
+        int highRange = treeSize - 1;
+        while (lvl > 0)
+        {
+            // printf("lvl: %d\nFrom %d to %d\n", lvl, lowRange, highRange);
+            buildRange(treeSum, lowRange, highRange, worker);
+            highRange = getFirstRowIdx(lvl) - 1;
+            lowRange = getFirstRowIdx(lvl - 1);
+            lvl--;
+        }
+
+        // printDouble(treeSum, treeSize, "TREESUM up pass");
+
+        // Down Pass ************************************************************
+        treeFromLeft = malloc(treeSize * sizeJob);
+        treeFromLeft[0] = 0;
+        lvl = 0;
+        lowRange = 0;
+        highRange = 0;
+        while (lvl < levels)
+        {
+            // printf("lvl: %d\nFrom %d to %d\n", lvl, lowRange, highRange);
+            sumRange(treeSum, treeFromLeft, lowRange, highRange, worker);
+            lvl++;
+            lowRange = getFirstRowIdx(lvl);
+            if (lvl < levels - 1)
+                highRange = getFirstRowIdx(lvl + 1) - 1;
+            else
+                highRange = lowRange + lastRow / 2 - 1;
+        }
+
+        // printDouble(treeFromLeft, treeSize, "TREE-From-Left DOWNPASS");
+
+        //Final output***************************************************************
+
+        // printf("Levels: %d\n", levels);
+        idx = getFirstRowIdx(levels);
+#pragma omp parallel firstprivate(idx)
+        {
+#pragma omp for
+            for (size_t i = 0; i < lastRow; i++)
+            {
+                worker(&d[i * sizeJob], &treeFromLeft[idx + i], &treeSum[idx + i]);
+            }
+
+            int remaining = (nJob - lastRow);
+            idx = idx - remaining;
+#pragma omp for
+            for (size_t i = 0; i < remaining; i++)
+            {
+                worker(&d[(i + lastRow) * sizeJob], &treeFromLeft[idx + i], &treeSum[idx + i]);
+            }
+        }
+        //free
+        free(treeSum);
+        free(treeFromLeft);
+    }
+}
+
+void scan_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3))
 {
     /* To be implemented */
     assert(dest != NULL);

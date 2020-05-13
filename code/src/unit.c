@@ -21,29 +21,36 @@
 // Workers
 //=======================================================
 
-/*
-static void workerMax(void* a, const void* b, const void* c) {
-    // a = max (b, c)
-    *(TYPE *)a = *(TYPE *)b;
-    if (*(TYPE *)c > *(TYPE *)a)
-        *(TYPE *)a = *(TYPE *)c;
-}
-*/
+// static void workerMax(void *a, const void *b, const void *c)
+// {
+//     // a = max (b, c)
+//     *(TYPE *)a = *(TYPE *)b;
+//     if (*(TYPE *)c > *(TYPE *)a)
+//         *(TYPE *)a = *(TYPE *)c;
+// }
 
-/*
-static void workerMin(void* a, const void* b, const void* c) {
-    // a = min (b, c)
-    *(TYPE *)a = *(TYPE *)b;
-    if (*(TYPE *)c < *(TYPE *)a)
-        *(TYPE *)a = *(TYPE *)c;
-}
-*/
+// static void workerMin(void *a, const void *b, const void *c)
+// {
+//     // a = min (b, c)
+//     *(TYPE *)a = *(TYPE *)b;
+//     if (*(TYPE *)c < *(TYPE *)a)
+//         *(TYPE *)a = *(TYPE *)c;
+// }
 
 static void workerAdd(void *a, const void *b, const void *c)
 {
     // a = b + c
     *(TYPE *)a = *(TYPE *)b + *(TYPE *)c;
 }
+
+// static void workerAdd_Hard(void *a, const void *b, const void *c)
+// {
+//     // a = b + c
+//     for (size_t i = 0; i < 1000; i++)
+//     {
+//         *(TYPE *)a = *(TYPE *)b + *(TYPE *)c;
+//     }
+// }
 
 /*
 static void workerSubtract(void* a, const void* b, const void* c) {
@@ -144,6 +151,14 @@ void testScan(void *src, size_t n, size_t size)
     free(dest);
 }
 
+void testScan_seq(void *src, size_t n, size_t size)
+{
+    TYPE *dest = malloc(n * size);
+    scan_seq(dest, src, n, size, workerAdd);
+    printDouble(dest, n, __FUNCTION__);
+    free(dest);
+}
+
 void testPack(void *src, size_t n, size_t size)
 {
     int nFilter = 3;
@@ -222,6 +237,7 @@ TESTFUNCTION testFunction[] = {
     testReduceMult,
     testReduceMult_seq,
     testScan,
+    testScan_seq,
     testPack,
     testGather,
     testScatter,
@@ -238,6 +254,7 @@ char *testNames[] = {
     "testReduceMult",
     "testReduceMult_seq",
     "testScan",
+    "testScan_seq",
     "testPack",
     "testGather",
     "testScatter",
