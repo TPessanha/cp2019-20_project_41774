@@ -7,17 +7,6 @@
 #include "debug.h"
 #include <math.h>
 
-#if defined(INT)
-#define TYPE int
-#define FMT "%d"
-#elif defined(FLOAT)
-#define TYPE float
-#define FMT "%f"
-#else
-#define TYPE double
-#define FMT "%lf"
-#endif
-
 void map(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2))
 {
     assert(dest != NULL);
@@ -113,18 +102,18 @@ void reduce_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worke
     }
 }
 
-void buildRange(TYPE *treeSum, int lo, int hi, void (*worker)(void *dst, const void *v1, const void *v2))
+void buildRange(char *treeSum, int lo, int hi, void (*worker)(void *dst, const void *v1, const void *v2), size_t sizeJob)
 {
 #pragma omp parallel for
     for (size_t i = lo; i < hi; i += 2)
     {
         // printf("Lo: %ld\nHI: %d\n", i, hi);
-        worker(&treeSum[i / 2], &treeSum[i], &treeSum[i + 1]);
+        worker(&treeSum[(i / 2) * sizeJob], &treeSum[i * sizeJob], &treeSum[(i + 1) * sizeJob]);
     }
     // }
 }
 
-void sumRange(TYPE *treeSum, TYPE *treeLeft, int lo, int hi, void (*worker)(void *dst, const void *v1, const void *v2))
+void sumRange(char *treeSum, char *treeLeft, int lo, int hi, void (*worker)(void *dst, const void *v1, const void *v2), size_t sizeJob)
 {
 #pragma omp parallel for
     for (size_t i = lo; i <= hi; i++)
@@ -132,8 +121,8 @@ void sumRange(TYPE *treeSum, TYPE *treeLeft, int lo, int hi, void (*worker)(void
         int leftChild = i * 2 + 1;
         // printf("Lo: %ld\nHI: %d\n", i, hi);
         // printf("LChild: %d\n", leftChild);
-        memcpy(&treeLeft[leftChild], &treeLeft[i], sizeof(TYPE));
-        worker(&treeLeft[leftChild + 1], &treeLeft[i], &treeSum[leftChild]);
+        memcpy(&treeLeft[leftChild * sizeJob], &treeLeft[i * sizeJob], sizeJob);
+        worker(&treeLeft[(leftChild + 1) * sizeJob], &treeLeft[i * sizeJob], &treeSum[leftChild * sizeJob]);
     }
     // }
 }
@@ -154,10 +143,9 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
     assert(src != NULL);
     assert(worker != NULL);
     char *d = dest;
-    // char *s = src;
-    TYPE *sd = src;
-    TYPE *treeSum;
-    TYPE *treeFromLeft;
+    char *s = src;
+    char *treeSum;
+    char *treeFromLeft;
     if (nJob > 1)
     {
         int treeSize = nJob * 2 - 1;
@@ -173,7 +161,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 #pragma omp for
             for (size_t i = 0; i < lastRow; i++)
             {
-                memcpy(&treeSum[idx + i], &sd[i], sizeJob);
+                memcpy(&treeSum[(idx + i) * sizeJob], &s[i * sizeJob], sizeJob);
             }
 
             // memcpy(&treeSum[idx], &sd[0], lastRow * sizeJob);
@@ -183,7 +171,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 #pragma omp for
             for (size_t i = 0; i < remaining; i++)
             {
-                memcpy(&treeSum[idx + i], &sd[lastRow + i], sizeJob);
+                memcpy(&treeSum[(idx + i) * sizeJob], &s[(lastRow + i) * sizeJob], sizeJob);
             }
         }
         // memcpy(&treeSum[idx - remaining], &sd[lastRow], remaining * sizeJob);
@@ -197,7 +185,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
         while (lvl > 0)
         {
             // printf("lvl: %d\nFrom %d to %d\n", lvl, lowRange, highRange);
-            buildRange(treeSum, lowRange, highRange, worker);
+            buildRange(treeSum, lowRange, highRange, worker, sizeJob);
             highRange = getFirstRowIdx(lvl) - 1;
             lowRange = getFirstRowIdx(lvl - 1);
             lvl--;
@@ -214,7 +202,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
         while (lvl < levels)
         {
             // printf("lvl: %d\nFrom %d to %d\n", lvl, lowRange, highRange);
-            sumRange(treeSum, treeFromLeft, lowRange, highRange, worker);
+            sumRange(treeSum, treeFromLeft, lowRange, highRange, worker, sizeJob);
             lvl++;
             lowRange = getFirstRowIdx(lvl);
             if (lvl < levels - 1)
@@ -234,7 +222,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 #pragma omp for
             for (size_t i = 0; i < lastRow; i++)
             {
-                worker(&d[i * sizeJob], &treeFromLeft[idx + i], &treeSum[idx + i]);
+                worker(&d[i * sizeJob], &treeFromLeft[(idx + i) * sizeJob], &treeSum[(idx + i) * sizeJob]);
             }
 
             int remaining = (nJob - lastRow);
@@ -242,7 +230,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 #pragma omp for
             for (size_t i = 0; i < remaining; i++)
             {
-                worker(&d[(i + lastRow) * sizeJob], &treeFromLeft[idx + i], &treeSum[idx + i]);
+                worker(&d[(i + lastRow) * sizeJob], &treeFromLeft[(idx + i) * sizeJob], &treeSum[(idx + i) * sizeJob]);
             }
         }
         //free
