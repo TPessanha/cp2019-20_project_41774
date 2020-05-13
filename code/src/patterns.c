@@ -113,19 +113,6 @@ void reduce_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worke
     }
 }
 
-int calcTreeHeight(int nJob)
-{
-    assert(nJob >= 1);
-    nJob = nJob * 2 - 1;
-    int size = 1;
-    while (size < nJob)
-    {
-        size *= 2;
-    }
-    size--;
-    return size;
-}
-
 void buildRange(TYPE *treeSum, int lo, int hi, void (*worker)(void *dst, const void *v1, const void *v2))
 {
 #pragma omp parallel for
@@ -280,7 +267,41 @@ void scan_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)
     }
 }
 
+static void workerAdd(void *a, const void *b, const void *c)
+{
+    // a = b + c
+    *(int *)a = *(int *)b + *(int *)c;
+}
+
 int pack(void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter)
+{
+    /* To be implemented */
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(filter != NULL);
+    assert(nJob >= 0);
+    assert(sizeJob > 0);
+    char *d = dest;
+    char *s = src;
+    int *bitsum;
+
+    // SCAN ***********************************************
+    bitsum = malloc(nJob * sizeof(int));
+    scan_seq(bitsum, (void *)filter, nJob, sizeof(int), workerAdd);
+    int pos = bitsum[nJob - 1];
+
+    // parallel map ******************************************
+#pragma omp parallel for
+    for (int i = 0; i < nJob; i++)
+    {
+        if (filter[i])
+            memcpy(&d[(bitsum[i] - 1) * sizeJob], &s[i * sizeJob], sizeJob);
+    }
+
+    return pos;
+}
+
+int pack_seq(void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter)
 {
     /* To be implemented */
     assert(dest != NULL);

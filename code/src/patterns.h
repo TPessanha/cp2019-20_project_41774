@@ -57,6 +57,14 @@ int pack(
     const int *filter // Filer for pack
 );
 
+int pack_seq(
+    void *dest,       // Target array
+    void *src,        // Source array
+    size_t nJob,      // # elements in the source array
+    size_t sizeJob,   // Size of each element in the source array
+    const int *filter // Filer for pack
+);
+
 void gather(
     void *dest,        // Target array
     void *src,         // Source array
