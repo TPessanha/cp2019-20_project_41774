@@ -173,6 +173,20 @@ void testPack(void *src, size_t n, size_t size)
     free(dest);
 }
 
+void testPack_seq(void *src, size_t n, size_t size)
+{
+    int nFilter = 3;
+    TYPE *dest = malloc(nFilter * size);
+    int *filter = calloc(n, sizeof(*filter));
+    for (int i = 0; i < n; i++)
+        filter[i] = (i == 0 || i == n / 2 || i == n - 1);
+    int newN = pack_seq(dest, src, n, size, filter);
+    printInt(filter, n, "filter");
+    printDouble(dest, newN, __FUNCTION__);
+    free(filter);
+    free(dest);
+}
+
 void testGather(void *src, size_t n, size_t size)
 {
     int nFilter = 3;
@@ -239,6 +253,7 @@ TESTFUNCTION testFunction[] = {
     testScan,
     testScan_seq,
     testPack,
+    testPack_seq,
     testGather,
     testScatter,
     testPipeline,
@@ -256,6 +271,7 @@ char *testNames[] = {
     "testScan",
     "testScan_seq",
     "testPack",
+    "testPack_seq",
     "testGather",
     "testScatter",
     "testPipeline",
