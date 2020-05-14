@@ -412,7 +412,6 @@ void scatter_seq(void *dest, void *src, size_t nJob, size_t sizeJob, const int *
 
 void pipeline(void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers)
 {
-    /* To be implemented */
     assert(dest != NULL);
     assert(src != NULL);
     assert(workerList != NULL);
@@ -422,6 +421,7 @@ void pipeline(void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerL
     char *s = src;
     int *workUntil[nWorkers + 1];
 
+    int maxThreads = omp_get_max_threads();
 #pragma omp parallel
     {
 #pragma omp for
@@ -467,6 +467,8 @@ void pipeline(void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerL
     {
         free(workUntil[i]);
     }
+
+    omp_set_num_threads(maxThreads);
 }
 
 void pipeline_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers)
@@ -493,5 +495,12 @@ void pipeline_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*wor
 void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
 {
     /* To be implemented */
-    map(dest, src, nJob, sizeJob, worker); // it provides the right result, but is a very very vey bad implementation…
+
+    map_seq(dest, src, nJob, sizeJob, worker); // it provides the right result, but is a very very vey bad implementation…
+}
+
+void farm_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
+{
+    /* To be implemented */
+    map_seq(dest, src, nJob, sizeJob, worker); // it provides the right result, but is a very very vey bad implementation…
 }
