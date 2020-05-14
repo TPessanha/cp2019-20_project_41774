@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     if (debug)
         printf("\n\n");
 
-    int testFunctions[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0};
+    int testFunctions[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
     // int testFunctions[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0};
     for (int i = 0; i < nTestFunction; i++)
     {
