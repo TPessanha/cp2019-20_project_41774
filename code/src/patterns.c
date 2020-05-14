@@ -503,7 +503,8 @@ void map_seq_range(void *dest, void *src, size_t from, size_t to, size_t sizeJob
 
 void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
 {
-    omp_set_num_threads(nWorkers + 1);
+    int maxThreads = omp_get_max_threads();
+    omp_set_num_threads(nWorkers);
 #pragma omp parallel
     {
 #pragma omp master
@@ -524,6 +525,7 @@ void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
             }
         }
     }
+    omp_set_num_threads(maxThreads);
 }
 
 void farm_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
