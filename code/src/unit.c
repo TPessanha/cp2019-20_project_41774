@@ -5,6 +5,7 @@
 
 #include "debug.h"
 #include "unit.h"
+#include "omp.h"
 
 #if defined(INT)
 #define TYPE int
@@ -287,7 +288,7 @@ void testPipeline_seq(void *src, size_t n, size_t size)
 void testFarm(void *src, size_t n, size_t size)
 {
     TYPE *dest = malloc(n * size);
-    farm(dest, src, n, size, workerAddOne, 3);
+    farm(dest, src, n, size, workerAddOne, omp_get_max_threads());
     printDouble(dest, n, __FUNCTION__);
     free(dest);
 }
@@ -295,7 +296,7 @@ void testFarm(void *src, size_t n, size_t size)
 void testFarm_seq(void *src, size_t n, size_t size)
 {
     TYPE *dest = malloc(n * size);
-    farm(dest, src, n, size, workerAddOne, 3);
+    farm_seq(dest, src, n, size, workerAddOne, omp_get_max_threads());
     printDouble(dest, n, __FUNCTION__);
     free(dest);
 }

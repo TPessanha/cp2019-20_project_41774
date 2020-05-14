@@ -488,8 +488,48 @@ void pipeline_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*wor
     }
 }
 
+void map_seq_range(void *dest, void *src, size_t from, size_t to, size_t sizeJob, void (*worker)(void *v1, const void *v2))
+{
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(worker != NULL);
+    char *d = dest;
+    char *s = src;
+    for (int i = from; i < to; i++)
+    {
+        worker(&d[i * sizeJob], &s[i * sizeJob]);
+    }
+}
+
 void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
 {
+    int maxThreads = omp_get_max_threads();
+    omp_set_num_threads(nWorkers);
+#pragma omp parallel
+    {
+#pragma omp master
+        {
+            int splited = nJob / nWorkers;
+            for (size_t i = 0; i < nWorkers; i++)
+            {
+                if (i == nWorkers - 1)
+                {
+#pragma omp task
+                    map_seq_range(dest, src, splited * i, nJob, sizeJob, worker);
+                }
+                else
+                {
+#pragma omp task
+                    map_seq_range(dest, src, splited * i, splited * (i + 1), sizeJob, worker);
+                }
+            }
+        }
+    }
+    omp_set_num_threads(maxThreads);
+}
+
+void farm_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
+{
     /* To be implemented */
-    map(dest, src, nJob, sizeJob, worker); // it provides the right result, but is a very very vey bad implementation…
+    map_seq(dest, src, nJob, sizeJob, worker); // it provides the right result, but is a very very vey bad implementation…
 }
