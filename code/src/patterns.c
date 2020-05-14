@@ -350,6 +350,49 @@ void gather_seq(void *dest, void *src, size_t nJob, size_t sizeJob, const int *f
 
 void scatter(void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter)
 {
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(filter != NULL);
+    assert(nJob >= 0);
+    assert(sizeJob > 0);
+    char *d = dest;
+    char *s = src;
+
+    omp_lock_t *locks;
+    if (nJob > 1)
+    {
+        locks = malloc(nJob * sizeof(omp_lock_t));
+
+#pragma omp parallel
+        {
+#pragma omp for
+            for (size_t i = 0; i < nJob; i++)
+            {
+                omp_init_lock(&locks[i]);
+            }
+#pragma omp for
+            for (size_t i = 0; i < nJob; i++)
+            {
+                assert(filter[i] < nJob);
+                if (omp_test_lock(&locks[filter[i]]))
+                {
+                    memcpy(&d[filter[i] * sizeJob], &s[i * sizeJob], sizeJob);
+                    // omp_unset_lock(&locks[i]);
+                }
+            }
+#pragma omp for
+            for (size_t i = 0; i < nJob; i++)
+            {
+                omp_destroy_lock(&locks[i]);
+            }
+        }
+        //free
+        free(locks);
+    }
+}
+
+void scatter_seq(void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter)
+{
     /* To be implemented */
     assert(dest != NULL);
     assert(src != NULL);

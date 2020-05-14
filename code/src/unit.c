@@ -215,7 +215,7 @@ void testGather_seq(void *src, size_t n, size_t size)
 
 void testScatter(void *src, size_t n, size_t size)
 {
-    int nDest = 6;
+    int nDest = 20;
     TYPE *dest = malloc(nDest * size);
     memset(dest, 0, nDest * size);
     int *filter = calloc(n, sizeof(*filter));
@@ -223,6 +223,21 @@ void testScatter(void *src, size_t n, size_t size)
         filter[i] = rand() % nDest;
     printInt(filter, n, "filter");
     scatter(dest, src, n, size, filter);
+    printDouble(dest, nDest, __FUNCTION__);
+    free(filter);
+    free(dest);
+}
+
+void testScatter_seq(void *src, size_t n, size_t size)
+{
+    int nDest = 20;
+    TYPE *dest = malloc(nDest * size);
+    memset(dest, 0, nDest * size);
+    int *filter = calloc(n, sizeof(*filter));
+    for (int i = 0; i < n; i++)
+        filter[i] = rand() % nDest;
+    printInt(filter, n, "filter");
+    scatter_seq(dest, src, n, size, filter);
     printDouble(dest, nDest, __FUNCTION__);
     free(filter);
     free(dest);
@@ -241,7 +256,28 @@ void testPipeline(void *src, size_t n, size_t size)
     free(dest);
 }
 
+void testPipeline_seq(void *src, size_t n, size_t size)
+{
+    void (*pipelineFunction[])(void *, const void *) = {
+        workerMultTwo,
+        workerAddOne,
+        workerDivTwo};
+    int nPipelineFunction = sizeof(pipelineFunction) / sizeof(pipelineFunction[0]);
+    TYPE *dest = malloc(n * size);
+    pipeline(dest, src, n, size, pipelineFunction, nPipelineFunction);
+    printDouble(dest, n, __FUNCTION__);
+    free(dest);
+}
+
 void testFarm(void *src, size_t n, size_t size)
+{
+    TYPE *dest = malloc(n * size);
+    farm(dest, src, n, size, workerAddOne, 3);
+    printDouble(dest, n, __FUNCTION__);
+    free(dest);
+}
+
+void testFarm_seq(void *src, size_t n, size_t size)
 {
     TYPE *dest = malloc(n * size);
     farm(dest, src, n, size, workerAddOne, 3);
@@ -270,6 +306,7 @@ TESTFUNCTION testFunction[] = {
     testGather,
     testGather_seq,
     testScatter,
+    testScatter_seq,
     testPipeline,
     testFarm,
 };
@@ -289,6 +326,7 @@ char *testNames[] = {
     "testGather",
     "testGather_seq",
     "testScatter",
+    "testScatter_seq",
     "testPipeline",
     "testFarm",
 };
