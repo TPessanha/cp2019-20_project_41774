@@ -50,6 +50,7 @@ void reduce(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(v
 
     if (nJob > 0)
     {
+        int maxThreads = omp_get_max_threads();
         if (omp_get_max_threads() > nJob)
             omp_set_num_threads(nJob);
 #pragma omp parallel shared(values, size)
@@ -81,8 +82,9 @@ void reduce(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(v
         //Set final value
         memcpy(&d[0], &values[0], sizeJob);
 
-        //free
+        //free and reset
         free(values);
+        omp_set_num_threads(maxThreads);
     }
 }
 
