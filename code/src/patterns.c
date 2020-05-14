@@ -418,6 +418,65 @@ void pipeline(void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerL
     assert(sizeJob > 0);
     char *d = dest;
     char *s = src;
+    int *workUntil[nWorkers + 1];
+
+#pragma omp parallel
+    {
+#pragma omp for
+        for (size_t i = 0; i < nJob; i++)
+        {
+            memcpy(&d[i * sizeJob], &s[i * sizeJob], sizeJob);
+        }
+#pragma omp for
+        for (size_t i = 1; i < nWorkers + 1; i++)
+        {
+            workUntil[i] = malloc(sizeof(int));
+            *workUntil[i] = -1;
+        }
+    }
+    workUntil[0] = malloc(sizeof(int));
+    *workUntil[0] = nJob - 1;
+    // printInt(workUntil, nWorkers + 1, "WorksDone");
+    omp_set_num_threads(nWorkers);
+
+#pragma omp parallel
+    {
+        int tid = omp_get_thread_num() + 1;
+        int *prev = workUntil[tid - 1];
+        int *own = workUntil[tid];
+        // if (tid == 1)
+        //     printf("own: %d, prev: %d\n", *own, *prev);
+        int until = (int)nJob - 1;
+        while (*own < until)
+        {
+            // assert(workUntil[tid] <= workUntil[tid - 1]);
+            if (*own == *prev)
+                continue;
+            // assert(workerList[tid - 1] != NULL);
+
+            // printf("thread %d Do: %d\n", tid, workUntil[tid] + 1);
+            workerList[tid - 1](&d[(*own + 1) * sizeJob], &d[(*own + 1) * sizeJob]);
+            (*own)++;
+        }
+    }
+
+#pragma omp parallel for
+    for (size_t i = 0; i < nWorkers + 1; i++)
+    {
+        free(workUntil[i]);
+    }
+}
+
+void pipeline_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers)
+{
+    /* To be implemented */
+    assert(dest != NULL);
+    assert(src != NULL);
+    assert(workerList != NULL);
+    assert(nJob >= 0);
+    assert(sizeJob > 0);
+    char *d = dest;
+    char *s = src;
     for (int i = 0; i < nJob; i++)
     {
         memcpy(&d[i * sizeJob], &s[i * sizeJob], sizeJob);

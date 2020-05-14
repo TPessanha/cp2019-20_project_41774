@@ -71,6 +71,15 @@ static void workerAddOne(void *a, const void *b)
     *(TYPE *)a = *(TYPE *)b + 1;
 }
 
+static void workerAdd1000_Hard(void *a, const void *b)
+{
+    // a = b + 1
+    for (size_t i = 0; i < 1000; i++)
+    {
+        *(TYPE *)a = *(TYPE *)b + 1;
+    }
+}
+
 static void workerMultTwo(void *a, const void *b)
 {
     // a = b * 2
@@ -247,6 +256,9 @@ void testPipeline(void *src, size_t n, size_t size)
 {
     void (*pipelineFunction[])(void *, const void *) = {
         workerMultTwo,
+        workerAdd1000_Hard,
+        workerAddOne,
+        workerAdd1000_Hard,
         workerAddOne,
         workerDivTwo};
     int nPipelineFunction = sizeof(pipelineFunction) / sizeof(pipelineFunction[0]);
@@ -260,11 +272,14 @@ void testPipeline_seq(void *src, size_t n, size_t size)
 {
     void (*pipelineFunction[])(void *, const void *) = {
         workerMultTwo,
+        workerAdd1000_Hard,
+        workerAddOne,
+        workerAdd1000_Hard,
         workerAddOne,
         workerDivTwo};
     int nPipelineFunction = sizeof(pipelineFunction) / sizeof(pipelineFunction[0]);
     TYPE *dest = malloc(n * size);
-    pipeline(dest, src, n, size, pipelineFunction, nPipelineFunction);
+    pipeline_seq(dest, src, n, size, pipelineFunction, nPipelineFunction);
     printDouble(dest, n, __FUNCTION__);
     free(dest);
 }
@@ -308,8 +323,9 @@ TESTFUNCTION testFunction[] = {
     testScatter,
     testScatter_seq,
     testPipeline,
+    testPipeline_seq,
     testFarm,
-};
+    testFarm_seq};
 
 char *testNames[] = {
     "testMap",
@@ -328,7 +344,8 @@ char *testNames[] = {
     "testScatter",
     "testScatter_seq",
     "testPipeline",
+    "testPipeline_seq",
     "testFarm",
-};
+    "testFarm_seq"};
 
 int nTestFunction = sizeof(testFunction) / sizeof(testFunction[0]);
