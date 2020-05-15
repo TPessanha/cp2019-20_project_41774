@@ -490,6 +490,8 @@ void pipeline_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*wor
 
 void map_seq_range(void *dest, void *src, size_t from, size_t to, size_t sizeJob, void (*worker)(void *v1, const void *v2))
 {
+    // int tid = omp_get_thread_num();
+    // printf("tdi: %d, doing %ld to %ld\n", tid, from, to);
     assert(dest != NULL);
     assert(src != NULL);
     assert(worker != NULL);
@@ -503,13 +505,12 @@ void map_seq_range(void *dest, void *src, size_t from, size_t to, size_t sizeJob
 
 void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
 {
-    int maxThreads = omp_get_max_threads();
-    omp_set_num_threads(nWorkers);
 #pragma omp parallel
     {
 #pragma omp master
         {
             int splited = nJob / nWorkers;
+            // printf("EACH split: %d\n", splited);
             for (size_t i = 0; i < nWorkers; i++)
             {
                 if (i == nWorkers - 1)
@@ -525,7 +526,6 @@ void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
             }
         }
     }
-    omp_set_num_threads(maxThreads);
 }
 
 void farm_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
