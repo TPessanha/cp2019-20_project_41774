@@ -402,3 +402,4 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/c++,java,linux,macos,latex,windows
 .vscode/settings.json
+code/perf.data
