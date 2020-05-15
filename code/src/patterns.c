@@ -288,6 +288,9 @@ int pack(void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter)
             memcpy(&d[(bitsum[i] - 1) * sizeJob], &s[i * sizeJob], sizeJob);
     }
 
+    //free
+    free(bitsum);
+
     return pos;
 }
 
