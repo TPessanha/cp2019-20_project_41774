@@ -80,9 +80,10 @@ int main(int argc, char *argv[])
 
     int testFunctions[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
     // int testFunctions[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0};
+    int runAll = 1;
     for (int i = 0; i < nTestFunction; i++)
     {
-        if (testFunctions[i] == 0)
+        if (runAll == 0 && testFunctions[i] == 0)
             continue;
 
         double start = omp_get_wtime();
