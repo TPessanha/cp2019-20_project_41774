@@ -61,7 +61,7 @@ void reduce(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(v
                 size = sizeJob * omp_get_num_threads();
                 values = malloc(size);
             }
-            TYPE tmp;
+            char *tmp = malloc(sizeJob);
             //grab initial value from source
             int tid = omp_get_thread_num();
             memcpy(&tmp, &s[tid * sizeJob], sizeJob);
@@ -75,7 +75,7 @@ void reduce(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(v
             memcpy(&values[tid * sizeJob], &tmp, sizeJob);
         }
         //do final reduction after all theads finished
-        for (int i = 1; i < size / sizeof(TYPE); i++)
+        for (int i = 1; i < size / sizeJob; i++)
         {
             worker(&values[0], &values[0], &values[i * sizeJob]);
         }
@@ -497,6 +497,8 @@ void pipeline_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*wor
 
 void map_seq_range(void *dest, void *src, size_t from, size_t to, size_t sizeJob, void (*worker)(void *v1, const void *v2))
 {
+    // int tid = omp_get_thread_num();
+    // printf("tdi: %d, doing %ld to %ld\n", tid, from, to);
     assert(dest != NULL);
     assert(src != NULL);
     assert(worker != NULL);
@@ -510,13 +512,12 @@ void map_seq_range(void *dest, void *src, size_t from, size_t to, size_t sizeJob
 
 void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
 {
-    int maxThreads = omp_get_max_threads();
-    omp_set_num_threads(nWorkers);
 #pragma omp parallel
     {
 #pragma omp master
         {
             int splited = nJob / nWorkers;
+            // printf("EACH split: %d\n", splited);
             for (size_t i = 0; i < nWorkers; i++)
             {
                 if (i == nWorkers - 1)
@@ -532,7 +533,6 @@ void farm(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
             }
         }
     }
-    omp_set_num_threads(maxThreads);
 }
 
 void farm_seq(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers)
