@@ -14,6 +14,7 @@ Student: 41774
 ```
 git clone the project
 open a terminal on the code folder (Whrere makefile is)
+Use the branch Development
 make
 ```
 
@@ -21,6 +22,8 @@ make
 The program has 2 optional arguments -d and -t
 -d activates debug mode
 -t [n] makes it so the program uses n threads in openmp.
+
+And a mandatory final argument the number of jobs to do.
 
 The sequential versions of the patterns where left alone but renamed to [pattern]_seq.
 ```
