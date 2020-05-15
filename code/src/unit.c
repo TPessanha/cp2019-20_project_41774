@@ -225,7 +225,7 @@ void testGather_seq(void *src, size_t n, size_t size)
 
 void testScatter(void *src, size_t n, size_t size)
 {
-    int nDest = 20;
+    int nDest = 5;
     TYPE *dest = malloc(nDest * size);
     memset(dest, 0, nDest * size);
     int *filter = calloc(n, sizeof(*filter));
@@ -240,7 +240,7 @@ void testScatter(void *src, size_t n, size_t size)
 
 void testScatter_seq(void *src, size_t n, size_t size)
 {
-    int nDest = 20;
+    int nDest = 5;
     TYPE *dest = malloc(nDest * size);
     memset(dest, 0, nDest * size);
     int *filter = calloc(n, sizeof(*filter));
@@ -288,7 +288,7 @@ void testPipeline_seq(void *src, size_t n, size_t size)
 void testFarm(void *src, size_t n, size_t size)
 {
     TYPE *dest = malloc(n * size);
-    farm(dest, src, n, size, workerAddOne, omp_get_max_threads());
+    farm(dest, src, n, size, workerAddOne, 3);
     printDouble(dest, n, __FUNCTION__);
     free(dest);
 }
@@ -296,7 +296,7 @@ void testFarm(void *src, size_t n, size_t size)
 void testFarm_seq(void *src, size_t n, size_t size)
 {
     TYPE *dest = malloc(n * size);
-    farm_seq(dest, src, n, size, workerAddOne, omp_get_max_threads());
+    farm_seq(dest, src, n, size, workerAddOne, 3);
     printDouble(dest, n, __FUNCTION__);
     free(dest);
 }
