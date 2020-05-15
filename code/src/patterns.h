@@ -1,17 +1,6 @@
 #ifndef __PATTERNS_H
 #define __PATTERNS_H
 
-#if defined(INT)
-#define TYPE int
-#define FMT "%d"
-#elif defined(FLOAT)
-#define TYPE float
-#define FMT "%f"
-#else
-#define TYPE double
-#define FMT "%lf"
-#endif
-
 void map(
     void *dest,                              // Target array
     void *src,                               // Source array
