@@ -61,7 +61,7 @@ void reduce(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(v
                 size = sizeJob * omp_get_num_threads();
                 values = malloc(size);
             }
-            TYPE tmp;
+            char *tmp = malloc(sizeJob);
             //grab initial value from source
             int tid = omp_get_thread_num();
             memcpy(&tmp, &s[tid * sizeJob], sizeJob);
@@ -75,7 +75,7 @@ void reduce(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(v
             memcpy(&values[tid * sizeJob], &tmp, sizeJob);
         }
         //do final reduction after all theads finished
-        for (int i = 1; i < size / sizeof(TYPE); i++)
+        for (int i = 1; i < size / sizeJob; i++)
         {
             worker(&values[0], &values[0], &values[i * sizeJob]);
         }
