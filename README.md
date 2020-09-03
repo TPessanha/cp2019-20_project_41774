@@ -1,5 +1,6 @@
 # README #
 (Please use the development branch)
+
 This project uses OpenMP to run several Parrallel patterns using the C language.
 
 Project for CP 1920
